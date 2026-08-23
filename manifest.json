@@ -1,0 +1,19 @@
+{
+  "manifest_version": 1,
+  "connectors": [
+    {
+      "package": "trabajos_es",
+      "site": "trabajos.com",
+      "country": "ES",
+      "language": "es",
+      "contributor": "@nuncaeslupus",
+      "last_verified": "2026-08-23",
+      "files": [
+        "connector.yaml",
+        "fixture/detail.html",
+        "fixture/list.html",
+        "meta.yaml"
+      ]
+    }
+  ]
+}
