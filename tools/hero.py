@@ -28,6 +28,7 @@ from xml.sax.saxutils import escape
 ROOT = Path(__file__).resolve().parent.parent
 OUT_SVG = ROOT / "docs" / "hero.svg"
 OUT_PNG = ROOT / "docs" / "hero.png"
+LOGO_SVG = ROOT / "docs" / "logo.svg"
 
 #: The GitHub social-preview size, which the README shows scaled to its column.
 W, H = 1280, 640
@@ -89,20 +90,40 @@ def sheet() -> list[str]:
         x = 30 + zw * i
         if i:
             out.append(f'<line x1="{x}" y1="16" x2="{x}" y2="30" stroke="{FRAME}"/>')
-            out.append(f'<line x1="{x}" y1="{H - 30}" x2="{x}" y2="{H - 16}" stroke="{FRAME}"/>')
+            out.append(
+                f'<line x1="{x}" y1="{H - 30}" x2="{x}" y2="{H - 16}" stroke="{FRAME}"/>'
+            )
         for y in (27, H - 19):
             out.append(
-                text(x + zw / 2, y, str(8 - i), size=9, fill=DIM, family=MONO, anchor="middle")
+                text(
+                    x + zw / 2,
+                    y,
+                    str(8 - i),
+                    size=9,
+                    fill=DIM,
+                    family=MONO,
+                    anchor="middle",
+                )
             )
     zh = (H - 60) / 4
     for i in range(4):
         y = 30 + zh * i
         if i:
             out.append(f'<line x1="16" y1="{y}" x2="30" y2="{y}" stroke="{FRAME}"/>')
-            out.append(f'<line x1="{W - 30}" y1="{y}" x2="{W - 16}" y2="{y}" stroke="{FRAME}"/>')
+            out.append(
+                f'<line x1="{W - 30}" y1="{y}" x2="{W - 16}" y2="{y}" stroke="{FRAME}"/>'
+            )
         for x in (23, W - 23):
             out.append(
-                text(x, y + zh / 2 + 3, "ABCD"[i], size=9, fill=DIM, family=MONO, anchor="middle")
+                text(
+                    x,
+                    y + zh / 2 + 3,
+                    "ABCD"[i],
+                    size=9,
+                    fill=DIM,
+                    family=MONO,
+                    anchor="middle",
+                )
             )
     for cx, cy in ((48, 48), (48, H - 48)):
         out += [
@@ -113,20 +134,55 @@ def sheet() -> list[str]:
     return out
 
 
+#: One rule in every hero: the logo tile is 0.95 x the wordmark's font size, centred on
+#: its capital band (baseline to cap height, 0.727 em), with a quarter-em gap before it.
+WORD_SIZE, WORD_BASE, LOGO_X = 70, 122, 64
+LOGO_SIZE = round(0.95 * WORD_SIZE)
+LOGO_Y = round(WORD_BASE - 0.727 * WORD_SIZE / 2 - LOGO_SIZE / 2)
+TEXT_X = LOGO_X + LOGO_SIZE + round(0.25 * WORD_SIZE)
+
+
+def logo(x: float, y: float, size: float) -> str:
+    """docs/logo.svg nested inline, so the PNG needs no second file."""
+    inner = LOGO_SVG.read_text().strip()
+    inner = inner[inner.index(">") + 1 : inner.rindex("</svg>")]
+    # The tile is the sheet's own cream, so an outline keeps it the same size as the others.
+    return (
+        f'<svg x="{x}" y="{y}" width="{size}" height="{size}" viewBox="0 0 64 64">{inner}'
+        f'<rect x="0.5" y="0.5" width="63" height="63" rx="13.5" fill="none" stroke="{FRAME}" stroke-width="1"/></svg>'
+    )
+
+
 def wordmark() -> list[str]:
     return [
-        f'<text x="64" y="122" font-family="{DISPLAY}" font-size="70" font-weight="800" '
-        f'letter-spacing="-2"><tspan fill="{INK}">integral</tspan>'
+        logo(LOGO_X, LOGO_Y, LOGO_SIZE),
+        f'<text x="{TEXT_X}" y="{WORD_BASE}" font-family="{DISPLAY}" font-size="{WORD_SIZE}" '
+        f'font-weight="800" letter-spacing="-2"><tspan fill="{INK}">integral</tspan>'
         f'<tspan fill="{TEAL}">-connectors</tspan></text>',
-        text(68, 164, "One package per job board. Four files, no code.", size=25, fill="#3b4652"),
-        text(68, 192, "How integral-job-search reads a board's listings.", size=15, fill=DIM),
+        text(
+            68,
+            164,
+            "One package per job board. Four files, no code.",
+            size=25,
+            fill="#3b4652",
+        ),
+        text(
+            68,
+            192,
+            "How integral-job-search reads a board's listings.",
+            size=15,
+            fill=DIM,
+        ),
     ]
 
 
 def title_block() -> list[str]:
     x, y, w, h = 842, 62, 376, 64
     half = w / 2 - 20
-    cells = [(0.0, "PART OF", "integral-job-search"), (half, "THE RULE", "crawlers, never adverts")]
+    cells = [
+        (0.0, "PART OF", "integral-job-search"),
+        (half, "THE RULE", "crawlers, never adverts"),
+    ]
     out = [
         f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="{PAPER}" stroke="{FRAME}" '
         f'stroke-width="1.2"/>',
@@ -137,8 +193,19 @@ def title_block() -> list[str]:
         text(x + 10, y + 30, "integral-connectors", size=14, weight=700, family=MONO),
     ]
     for cx, label, value in cells:
-        out.append(text(x + cx + 10, y + 47, label, size=8, fill=DIM, family=MONO, spacing=1.5))
-        out.append(text(x + cx + 10, y + 61, value, size=11, family=MONO, fill=TEAL if cx else INK))
+        out.append(
+            text(x + cx + 10, y + 47, label, size=8, fill=DIM, family=MONO, spacing=1.5)
+        )
+        out.append(
+            text(
+                x + cx + 10,
+                y + 61,
+                value,
+                size=11,
+                family=MONO,
+                fill=TEAL if cx else INK,
+            )
+        )
     return out
 
 
@@ -156,7 +223,15 @@ def arrow(x1: float, x2: float, y: float, label: str) -> list[str]:
         f'stroke-width="1.4" stroke-dasharray="5 3"/>',
         f'<path d="M{x2 - 8},{y - 5} L{x2},{y} L{x2 - 8},{y + 5}" fill="none" '
         f'stroke="{TEAL}" stroke-width="1.4"/>',
-        text((x1 + x2) / 2, y - 8, label, size=11, fill=TEAL, family=MONO, anchor="middle"),
+        text(
+            (x1 + x2) / 2,
+            y - 8,
+            label,
+            size=11,
+            fill=TEAL,
+            family=MONO,
+            anchor="middle",
+        ),
     ]
 
 
@@ -202,7 +277,9 @@ def figure() -> list[str]:
             out.append(
                 f'<line x1="{trunk}" y1="{y - 4}" x2="{tx - 6}" y2="{y - 4}" stroke="{FRAME}"/>'
             )
-        out.append(text(tx, y, name, size=13, weight=700 if not indent else 600, family=MONO))
+        out.append(
+            text(tx, y, name, size=13, weight=700 if not indent else 600, family=MONO)
+        )
         if why:
             out.append(text(tx, y + 17, why, size=11.5, fill=DIM))
     # The connector, as data.
@@ -219,7 +296,9 @@ def figure() -> list[str]:
     # What comes out, and where it goes.
     x3 = 924
     out += arrow(x2 + w2 + 6, x3 - 6, top + 112, "")
-    out.append(text(x3, top - 10, "FIELDS OUT", size=10, fill=TEAL, family=MONO, spacing=2))
+    out.append(
+        text(x3, top - 10, "FIELDS OUT", size=10, fill=TEAL, family=MONO, spacing=2)
+    )
     for i, name in enumerate(FIELDS):
         y = top + 20 + i * 36
         cw = len(name) * 7.6 + 28
@@ -234,8 +313,24 @@ def figure() -> list[str]:
         f'{bx - 4},{by + 40}" fill="none" stroke="{TEAL}" stroke-width="1.4" '
         f'stroke-dasharray="5 3"/>',
         f'<rect x="{bx}" y="{by}" width="156" height="80" rx="6" fill="{TEAL}"/>',
-        text(bx + 78, by + 34, "integral-", size=15, weight=700, fill="#ffffff", anchor="middle"),
-        text(bx + 78, by + 54, "job-search", size=15, weight=700, fill="#ffffff", anchor="middle"),
+        text(
+            bx + 78,
+            by + 34,
+            "integral-",
+            size=15,
+            weight=700,
+            fill="#ffffff",
+            anchor="middle",
+        ),
+        text(
+            bx + 78,
+            by + 54,
+            "job-search",
+            size=15,
+            weight=700,
+            fill="#ffffff",
+            anchor="middle",
+        ),
     ]
     return out
 
@@ -290,7 +385,9 @@ def main() -> None:
     OUT_SVG.write_text(svg())
     with tempfile.TemporaryDirectory() as tmp:
         page = Path(tmp) / "hero.html"
-        page.write_text(f'<html><body style="margin:0;overflow:hidden">{svg()}</body></html>')
+        page.write_text(
+            f'<html><body style="margin:0;overflow:hidden">{svg()}</body></html>'
+        )
         subprocess.run(
             [
                 chromium(),
