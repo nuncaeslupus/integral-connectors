@@ -28,6 +28,7 @@ from xml.sax.saxutils import escape
 ROOT = Path(__file__).resolve().parent.parent
 OUT_SVG = ROOT / "docs" / "hero.svg"
 OUT_PNG = ROOT / "docs" / "hero.png"
+LOGO_SVG = ROOT / "docs" / "logo.svg"
 
 #: The GitHub social-preview size, which the README shows scaled to its column.
 W, H = 1280, 640
@@ -113,10 +114,23 @@ def sheet() -> list[str]:
     return out
 
 
+#: The logo tile's size on the sheet, and the room it takes left of the wordmark.
+LOGO_SIZE = 84
+LOGO_GAP = 20
+
+
+def logo(x: float, y: float, size: float) -> str:
+    """docs/logo.svg nested inline, so the PNG needs no second file."""
+    inner = LOGO_SVG.read_text().strip()
+    inner = inner[inner.index(">") + 1 : inner.rindex("</svg>")]
+    return f'<svg x="{x}" y="{y}" width="{size}" height="{size}" viewBox="0 0 64 64">{inner}</svg>'
+
+
 def wordmark() -> list[str]:
     return [
-        f'<text x="64" y="122" font-family="{DISPLAY}" font-size="70" font-weight="800" '
-        f'letter-spacing="-2"><tspan fill="{INK}">integral</tspan>'
+        logo(64, 50, LOGO_SIZE),
+        f'<text x="{64 + LOGO_SIZE + LOGO_GAP}" y="122" font-family="{DISPLAY}" font-size="70" '
+        f'font-weight="800" letter-spacing="-2"><tspan fill="{INK}">integral</tspan>'
         f'<tspan fill="{TEAL}">-connectors</tspan></text>',
         text(68, 164, "One package per job board. Four files, no code.", size=25, fill="#3b4652"),
         text(68, 192, "How integral-job-search reads a board's listings.", size=15, fill=DIM),
