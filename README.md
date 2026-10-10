@@ -1,5 +1,9 @@
 # integral-connectors
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/nuncaeslupus/integral-connectors/main/docs/hero.png" width="100%" alt="integral-connectors: a connector package of four files, connector.yaml, meta.yaml and two recorded fixture pages; a connector.yaml excerpt mapping CSS selectors to fields; the fields it yields flowing into integral-job-search; and the guarantees: no code, robots.txt checked, sampled fixtures, offline checks, generated manifest">
+</p>
+
 Connectors for [`integral-job-search`](https://github.com/nuncaeslupus/integral-job-search):
 one small package per job board, saying how to read that board's listings.
 
