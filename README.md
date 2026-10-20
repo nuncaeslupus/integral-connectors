@@ -18,8 +18,8 @@ search, not in the middle of one.
 
 You do not install this repository. integral-job-search reads
 [`manifest.json`](manifest.json) over plain HTTPS, fetches the packages it lists
-into `~/.integral-job-search/connectors/` (or `$INTEGRAL_HOME/connectors/`) and
-runs each package's fixture check before first use.
+into its data directory (`$INTEGRAL_HOME/connectors/`; `~/.integral-job-search/connectors/`
+on Linux by default) and runs each package's fixture check before first use.
 
 To check the packages yourself, run the conformance command from an
 integral-job-search clone (Python 3.12+, [uv](https://docs.astral.sh/uv/)):
@@ -88,7 +88,7 @@ integral-job-search; nothing in this repository runs on its own.
   browser HAR capture into a scraper). Ask a session there to connect a board.
 - **Contributing one.** The tool discloses exactly which files would be sent,
   asks once, and writes the bundle plus the `gh pr create` command to
-  `~/.integral-job-search/outbox/`. It never sends anything itself; the pull
+  its outbox. It never sends anything itself; the pull
   request body is generated from `meta.yaml`.
 - **Reading the index.** `manifest.json` lists each package with site, country,
   language, contributor, `last_verified` and its exact file list.
