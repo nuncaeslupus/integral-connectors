@@ -1,56 +1,156 @@
 # integral-connectors
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 <p align="center">
   <img src="https://raw.githubusercontent.com/nuncaeslupus/integral-connectors/main/docs/hero.png" width="100%" alt="integral-connectors: a connector package of four files, connector.yaml, meta.yaml and two recorded fixture pages; a connector.yaml excerpt mapping CSS selectors to fields; the fields it yields flowing into integral-job-search; and the guarantees: no code, robots.txt checked, sampled fixtures, offline checks, generated manifest">
 </p>
 
-Connectors for [`integral-job-search`](https://github.com/nuncaeslupus/integral-job-search):
-one small package per job board, saying how to read that board's listings.
+**Job-board connectors for [integral-job-search](https://github.com/nuncaeslupus/integral-job-search): one small data package per board, saying how to read its listings.**
 
-A connector is **four files and no code**:
+A connector is four files and no code: which URL to fetch, which element holds
+which field, who maintains it, and recorded pages to check it against offline.
+integral-job-search downloads connectors from this repository and refuses any
+whose fixture check fails, so a board whose markup changed is caught before a
+search, not in the middle of one.
+
+## Quick start
+
+You do not install this repository. integral-job-search reads
+[`manifest.json`](manifest.json) over plain HTTPS, fetches the packages it lists
+into `~/.integral-job-search/connectors/` (or `$INTEGRAL_HOME/connectors/`) and
+runs each package's fixture check before first use.
+
+To check the packages yourself, run the conformance command from an
+integral-job-search clone (Python 3.12+, [uv](https://docs.astral.sh/uv/)):
+
+```bash
+git clone https://github.com/nuncaeslupus/integral-job-search.git
+git clone https://github.com/nuncaeslupus/integral-connectors.git
+cd integral-job-search && uv sync
+uv run python -m integral.connector_contract --connectors ../integral-connectors/connectors
+```
+
+```
+{"connector_contract_violations": 0, "packages_checked": 1, "evidence_writes_for_a_foreign_library": 0, "address_key_sites_outside_every_block": {}, "violations": []}
+```
+
+## Example
+
+`connectors/trabajos_es/connector.yaml`, condensed and with comments removed:
+
+```yaml
+site: trabajos
+locale: es
+version: "1.0.0"
+last_verified: "2026-08-23"
+auth: none
+
+list:
+  url_pattern: "https://www.trabajos.com/ofertas-empleo/atencion_al_cliente"
+  pagination: { mode: none, max_pages: 1 }
+  item: ".listado2014.card.oferta"
+  fields:
+    detail_url:   { css: "a.oferta.j4m_link", attr: href }
+    title:        { css: "a.oferta.j4m_link" }
+    company:      { css: "a.empresa" }
+    location_raw: { css: "span.location" }
+    text:         { css: "div.doextended" }
+
+detail:
+  fields:
+    title: { css: "h1" }
+    text:  { css: "div.subtitulo" }
+```
+
+Run over its recorded `fixture/list.html` with integral-job-search's parser
+(`integral.connectors.load_connector` and `parse_list_page`), it yields 40
+offers. The first:
+
+```json
+{
+  "detail_url": "https://www.trabajos.com/ofertas/1196550464/att-cliente-de-logistica-con-catalan/",
+  "title": "Att cliente de logística con CATALÁN",
+  "company": "Iman Temporing",
+  "location_raw": "L' Hospitalet De Llobregat , Barcelona",
+  "text": "Desde IMAN Temporing Sabadell, empresa especializada en RRHH, queremos acompañarte en tu trayectoria laboral. ..."
+}
+```
+
+## Use with AI agents
+
+Connectors are written and consumed by Claude Code sessions in
+integral-job-search; nothing in this repository runs on its own.
+
+- **Writing one.** integral-job-search ships a `connector-new` skill (robots.txt
+  adjudication, finding the request behind a page that renders after load,
+  mapping fields, capturing fixture and probe) and a `har` skill (turning a
+  browser HAR capture into a scraper). Ask a session there to connect a board.
+- **Contributing one.** The tool discloses exactly which files would be sent,
+  asks once, and writes the bundle plus the `gh pr create` command to
+  `~/.integral-job-search/outbox/`. It never sends anything itself; the pull
+  request body is generated from `meta.yaml`.
+- **Reading the index.** `manifest.json` lists each package with site, country,
+  language, contributor, `last_verified` and its exact file list.
+
+## Package layout
 
 ```
 connectors/<package>/
-  connector.yaml     which URL to fetch, and which element holds which field
-  meta.yaml          site, country, language, maintainer, robots.txt policy, fixture provenance
-  fixture/list.html  a recorded listing page, so the connector can be checked without the network
-  fixture/detail.html
+  connector.yaml       which URL to fetch, and which element holds which field
+  meta.yaml            site, country, language, maintainer, robots.txt policy, fixture provenance
+  fixture/list.html    a recorded listing page, so the connector can be checked offline
+  fixture/detail.html  a recorded offer page
 ```
 
-`connector.yaml` is data, not a program. Its selectors are single elements —
-tag, `#id`, `.class`, `[attr]`, contiguous — with **no CSS combinators at all**,
-so reading it can never mean evaluating it.
+- `connector.yaml` is data, not a program. Selectors are single elements (tag,
+  `#id`, `.class`, `[attr]`, contiguous) with no CSS combinators, so reading a
+  connector never means evaluating it.
+- `meta.yaml` records the `robots.txt` check under `policy`. A board that
+  disallows automated access does not get a connector.
+- `manifest.json` is generated by integral-job-search's
+  `tools/publish_connectors.py`, never edited by hand: the client fetches exactly
+  the files it lists.
 
-## The rule: crawlers, never adverts
+## Rules for fixtures
 
-**This repository collects crawlers. It does not collect job adverts.**
+This repository collects crawlers, not job adverts. Adverts are the boards'
+content, and the set of adverts a person reads reveals their field, level, city
+and the fact that they are looking. A committed fixture is permanent in every
+clone, so every fixture must be:
 
-Job adverts are the boards' content, not ours, and the *set* of adverts a person
-reads is not public information at all — it carries their field, their level,
-their city, and the fact that they are looking. A fixture committed here carries
-whatever it was made from, permanently, and no later deletion reaches a clone.
+- **Sampled for this purpose**: a category listing and one offer from it, fetched
+  deliberately, never an advert a candidate was reading. `meta.yaml` declares
+  `fixture: provenance: sampled`; any other value, or none, is refused.
+- **Excerpted**: advert bodies cut to a leading excerpt, declared with
+  `fixture: bodies: excerpted`. Cut in the raw bytes (integral-job-search's
+  `tools/excerpt_fixture.py`); parsing and re-serialising repairs broken markup,
+  which is exactly what a fixture must preserve.
+- **Free of client addresses**: a fixture containing an IPv4 literal is refused.
 
-So every fixture must:
+## Connectors
 
-- be **sampled for this purpose** — a category listing and one offer from it,
-  fetched deliberately. Never an advert a candidate was reading. `meta.yaml`
-  declares `fixture: provenance: sampled`, and a package that declares anything
-  else, or declares nothing, is refused rather than reviewed by hand;
-- carry **excerpted bodies**. A fixture proves the connector finds the right
-  fields in real markup; it does not need whole adverts to do that. Cut them,
-  and say so with `fixture: bodies: excerpted`.
-
-Excerpt in the **raw bytes** — `tools/excerpt_fixture.py` upstream does this.
-Parsing and re-serialising silently repairs whatever the server got wrong, and
-repaired markup is exactly what a fixture must not be: it would stop testing the
-thing it exists to test.
+| Package | Site | Country | Language | Last verified |
+|---|---|---|---|---|
+| `trabajos_es` | trabajos.com | ES | es | 2026-08-23 |
 
 ## Adding a board
 
-Check `robots.txt` first, and record the answer in `meta.yaml` under `policy`.
-A board that disallows automated access is not a board to write a connector for,
-however easy its markup is. Then open a pull request with the four files.
+1. Check the board's `robots.txt` and record the answer in `meta.yaml` under `policy`.
+2. Write the four files, or let integral-job-search's `connector-new` skill do it.
+3. Run the conformance command above over your directory: zero violations.
+4. Open a pull request with the four files. Do not edit `manifest.json`.
 
-`manifest.json` is **generated**, not edited — the tool fetches exactly the file
-names it lists, so a hand-typed list omits files silently. Upstream regenerates
-it with `tools/publish_connectors.py`.
+Full checklist: [CONTRIBUTING.md in integral-job-search](https://github.com/nuncaeslupus/integral-job-search/blob/main/CONTRIBUTING.md).
+
+## Related projects
+
+- [claude-arsenal](https://github.com/nuncaeslupus/claude-arsenal) — spec-driven Claude Code workflow and gated task queue.
+- [drawspec](https://github.com/nuncaeslupus/drawspec) — declarative diagram spec → clean SVG/PNG/text, writable by LLMs; MCP server included.
+- [doc-control](https://github.com/nuncaeslupus/doc-control) — lets AI agents edit Word documents as tracked changes.
+- [literary-critic](https://github.com/nuncaeslupus/literary-critic) — LLM manuscript analysis the way a professional editor would.
+- [integral-job-search](https://github.com/nuncaeslupus/integral-job-search) — candidate-centred job search run in Claude Code.
+
+## License
+
+[MIT](LICENSE).
