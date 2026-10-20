@@ -3,12 +3,12 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/nuncaeslupus/integral-connectors/main/docs/hero.png" width="100%" alt="integral-connectors: a connector package of four files, connector.yaml, meta.yaml and two recorded fixture pages; a connector.yaml excerpt mapping CSS selectors to fields; the fields it yields flowing into integral-job-search; and the guarantees: no code, robots.txt checked, sampled fixtures, offline checks, generated manifest">
+  <img src="https://raw.githubusercontent.com/nuncaeslupus/integral-connectors/main/docs/hero.png" width="100%" alt="integral-connectors: a connector package of connector.yaml, meta.yaml and recorded fixture pages; a connector.yaml excerpt mapping CSS selectors to fields; the fields it yields flowing into integral-job-search; and the guarantees: no code, robots.txt checked, sampled fixtures, offline checks, generated manifest">
 </p>
 
 **Job-board connectors for [integral-job-search](https://github.com/nuncaeslupus/integral-job-search): one small data package per board, saying how to read its listings.**
 
-A connector is four files and no code: which URL to fetch, which element holds
+A connector is a few files and no code: which URL to fetch, which element holds
 which field, who maintains it, and recorded pages to check it against offline.
 integral-job-search downloads connectors from this repository and refuses any
 whose fixture check fails, so a board whose markup changed is caught before a
@@ -22,7 +22,7 @@ into its data directory (`$INTEGRAL_HOME/connectors/`; `~/.integral-job-search/c
 on Linux by default) and runs each package's fixture check before first use.
 
 To check the packages yourself, run the conformance command from an
-integral-job-search clone (Python 3.12+, [uv](https://docs.astral.sh/uv/)):
+integral-job-search clone (with its required Python and [uv](https://docs.astral.sh/uv/)):
 
 ```bash
 git clone https://github.com/nuncaeslupus/integral-job-search.git
@@ -64,8 +64,8 @@ detail:
 ```
 
 Run over its recorded `fixture/list.html` with integral-job-search's parser
-(`integral.connectors.load_connector` and `parse_list_page`), it yields 40
-offers. The first:
+(`integral.connectors.load_connector` and `parse_list_page`), it yields
+the page's offers. The first:
 
 ```json
 {
@@ -130,16 +130,18 @@ clone, so every fixture must be:
 
 ## Connectors
 
-| Package | Site | Country | Language | Last verified |
-|---|---|---|---|---|
-| `trabajos_es` | trabajos.com | ES | es | 2026-08-23 |
+| Package | Site | Country | Language |
+|---|---|---|---|
+| `trabajos_es` | trabajos.com | ES | es |
+
+Each package's `last_verified` date is in [`manifest.json`](manifest.json).
 
 ## Adding a board
 
 1. Check the board's `robots.txt` and record the answer in `meta.yaml` under `policy`.
-2. Write the four files, or let integral-job-search's `connector-new` skill do it.
+2. Write the connector's files, or let integral-job-search's `connector-new` skill do it.
 3. Run the conformance command above over your directory: zero violations.
-4. Open a pull request with the four files. Do not edit `manifest.json`.
+4. Open a pull request with those files. Do not edit `manifest.json`.
 
 Full checklist: [CONTRIBUTING.md in integral-job-search](https://github.com/nuncaeslupus/integral-job-search/blob/main/CONTRIBUTING.md).
 
